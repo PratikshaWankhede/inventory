@@ -1,0 +1,27 @@
+const express = require("express");
+require("dotenv").config();
+const cors = require("cors");
+const proxyRoutes = require("./routes/proxy.routes");
+const { PORT } = require("./config/env");
+
+
+const app = express();
+
+app.use(
+  cors({
+    origin: "http://localhost:5173", // frontend URL
+    credentials: true,               // 🔑 allow cookies
+  })
+);
+
+//  * Handle preflight requests
+//  */
+app.options("*", cors());
+
+app.use("/", proxyRoutes);
+
+
+
+app.listen(PORT, () => {
+  console.log(` API Gateway running on port ${PORT}`);
+});
