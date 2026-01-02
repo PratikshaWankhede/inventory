@@ -37,6 +37,18 @@ exports.login = asyncHandler(async (req, res) => {
   });
 });
 
+exports.me = asyncHandler(async (req, res) => {
+  // req.user comes from auth.middleware
+  res.json({
+    success: true,
+    user: {
+      id: req.user.userId,
+      role: req.user.role,
+    },
+  });
+});
+
+
 exports.logout = asyncHandler(async (req, res) => {
   res.clearCookie("accessToken");
   res.json({ success: true, message: "Logged out successfully" });

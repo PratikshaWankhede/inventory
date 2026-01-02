@@ -6,9 +6,21 @@ import Invite from "./pages/Auth/Invite";
 import SetPassword from "./pages/Auth/SetPassword";
 import Toastify from "./components/common/Tostify";
 import DashboardLayout from "./components/layout/DashboardLayout";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { checkAuth } from "./features/auth/authSlice";
 
-const AppRoutes = () => (
+const App= () => {
+   const dispatch = useDispatch();
+
+
+  useEffect(() => {
+    dispatch(checkAuth());
+  }, [dispatch]);
+
+  return (
   <>
+  
     <Toastify />
     <Routes>
       <Route path="/login" element={<Login />} />
@@ -35,6 +47,7 @@ const AppRoutes = () => (
       </Route>
     </Routes>
   </>
-);
+  );
+};
 
-export default AppRoutes;
+export default App;

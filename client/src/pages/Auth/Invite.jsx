@@ -8,8 +8,9 @@ import { useState } from "react";
 const Invite = () => {
   const dispatch = useDispatch();
 
-  // ✅ READ loading FROM REDUX
+
   const { loading } = useSelector((state) => state.auth);
+const role = useSelector((state) => state.auth.role);
 
   const [form, setForm] = useState({
     name: "",
@@ -37,7 +38,8 @@ const Invite = () => {
   };
 
   return (
-    <form onSubmit={submit} className="p-6 bg-white w-96 shadow rounded">
+     <div className="flex items-center justify-center min-h-[70vh]">
+    <form onSubmit={submit} className="p-5 bg-white w-96 shadow rounded">
       <Input
         placeholder="Name"
         value={form.name}
@@ -56,14 +58,16 @@ const Invite = () => {
         onChange={(e) => setForm({ ...form, role: e.target.value })}
       >
         <option value="STAFF">STAFF</option>
-        <option value="MANAGER">MANAGER</option>
+       {role === "ADMIN" && <option value="MANAGER">MANAGER</option>}
+
       </select>
 
-      {/* ✅ LOADING APPLIED */}
+    
       <Button loading={loading}>
         Invite
       </Button>
     </form>
+    </div>
   );
 };
 

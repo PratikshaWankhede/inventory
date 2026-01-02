@@ -13,6 +13,7 @@ router.post(
 
 router.post("/set-password", ctrl.setPassword);
 router.post("/login", ctrl.login);
+router.get("/me", auth, ctrl.me);
 router.post("/logout", ctrl.logout);
 
 module.exports = router;

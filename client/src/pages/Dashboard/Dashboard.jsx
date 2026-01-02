@@ -8,17 +8,17 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-4 rounded shadow">
           <p className="text-gray-500">Total Products</p>
-          <h3 className="text-2xl font-bold">120</h3>
+          <h3 className="text-2xl font-bold">0</h3>
         </div>
 
         <div className="bg-white p-4 rounded shadow">
           <p className="text-gray-500">Low Stock Items</p>
-          <h3 className="text-2xl font-bold text-red-500">8</h3>
+          <h3 className="text-2xl font-bold text-red-500">0</h3>
         </div>
 
         <div className="bg-white p-4 rounded shadow">
           <p className="text-gray-500">Active Users</p>
-          <h3 className="text-2xl font-bold">15</h3>
+          <h3 className="text-2xl font-bold">0</h3>
         </div>
       </div>
  </div>

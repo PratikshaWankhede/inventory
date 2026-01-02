@@ -1,9 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 
-/* ============================
-   LOGIN
-============================ */
+
 export const login = createAsyncThunk(
   "auth/login",
   async (credentials, thunkAPI) => {
@@ -17,6 +15,19 @@ export const login = createAsyncThunk(
     }
   }
 );
+
+export const checkAuth = createAsyncThunk(
+  "auth/checkAuth",
+  async (_, thunkAPI) => {
+    try {
+      const res = await api.get("/auth/me");
+      return res.data.user;
+    } catch (err) {
+      return thunkAPI.rejectWithValue("Not authenticated",err);
+    }
+  }
+);
+
 
 /* ============================
    LOGOUT
@@ -97,13 +108,27 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.error = action.payload;
       })
- /* ---------- INVITE USER (🔥 THIS WAS MISSING) ---------- */
+ .addCase(checkAuth.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(checkAuth.fulfilled, (state, action) => {
+        state.loading = false;
+        state.isAuthenticated = true;
+        state.user = action.payload;
+        state.role = action.payload.role;
+      })
+      .addCase(checkAuth.rejected, (state) => {
+        state.loading = false;
+        state.isAuthenticated = false;
+        state.user = null;
+        state.role = null;
+      })
     .addCase(inviteUser.pending, (state) => {
-      state.loading = true;           // ✅ THIS ENABLES BUTTON LOADING
+      state.loading = true;         
       state.error = null;
     })
     .addCase(inviteUser.fulfilled, (state) => {
-      state.loading = false;          // ✅ STOP LOADING
+      state.loading = false;          
     })
     .addCase(inviteUser.rejected, (state, action) => {
       state.loading = false;
