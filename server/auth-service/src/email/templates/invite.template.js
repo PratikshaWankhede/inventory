@@ -2,7 +2,7 @@ require('dotenv').config();
 
 module.exports = ({ name, inviteToken }) => {
   const inviteLink = `${process.env.FRONTEND_URL}/set-password?token=${inviteToken}`;
- console.log("Invite Link:", inviteLink);
+
   return `
     <div style="font-family: Arial, sans-serif; line-height: 1.6">
       <h2>You're Invited </h2>

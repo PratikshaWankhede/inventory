@@ -1,6 +1,7 @@
 // src/controllers/auth.controller.js
 const asyncHandler = require("../middlewares/asyncHandler");
 const authService = require("../services/auth.service");
+const ApiError = require("../utils/ApiError");
 const { generateToken } = require("../utils/token");
 
 exports.inviteUser = asyncHandler(async (req, res) => {
@@ -9,7 +10,7 @@ exports.inviteUser = asyncHandler(async (req, res) => {
 });
 
 exports.setPassword = asyncHandler(async (req, res) => {
-   console.log("SET PASSWORD BODY:", req.body);
+ 
   const { token, password } = req.body;
     if (!token || !password) {
     throw new ApiError(400, "Token and password are required");
