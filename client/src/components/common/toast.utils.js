@@ -25,6 +25,4 @@ export const showInfo = (message) => {
   });
 };
 
-/**
- * Toast container (render ONCE in App.jsx)
- */
+

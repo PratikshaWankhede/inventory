@@ -1,62 +1,137 @@
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { login } from "../../features/auth/authSlice";
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { FiEye, FiEyeOff, FiMail, FiLock } from "react-icons/fi";
+
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
-import { FiEye, FiEyeOff } from "react-icons/fi";
+import FormError from "../../components/common/FormError";
+
+import { login, clearAuthError } from "../../features/auth/authSlice";
+import { loginSchema } from "./login.schema";
 
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { isAuthenticated, loading } = useSelector((state) => state.auth);
+  const { isAuthenticated, loading, error } = useSelector(
+    (state) => state.auth
+  );
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(loginSchema),
+    mode: "onChange",
+  });
+
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    dispatch(login({ email, password }));
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const emailValue = watch("email");
+  const passwordValue = watch("password");
+
+  // 🔐 Submit Handler
+  const onSubmit = (data) => {
+    if (loading) return;
+
+    dispatch(
+      login({
+        email: data.email.toLowerCase().trim(),
+        password: data.password.trim(),
+      })
+    );
   };
 
-  // 🔑 NAVIGATE AFTER LOGIN SUCCESS
+  //  Navigate after successful login
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/", { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
+  // 🧹 Clear server errors on route change / unmount
+  useEffect(() => {
+    return () => {
+      dispatch(clearAuthError());
+    };
+  }, [dispatch]);
+
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-4 sm:p-6 rounded shadow w-11/12 md:w-96"
-      >
-        <h2 className="text-xl font-bold mb-4">Login</h2>
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-400 to-white p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
 
-        <Input placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
-
-        {/* 🔐 PASSWORD WITH TOGGLE ICON */}
-        <div className="relative mb-3">
-          <Input
-            type={showPassword ? "text" : "password"}
-            placeholder="Password"
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute top-2 bottom-5 right-3 flex items-center text-gray-500 hover:text-gray-700"
-          >
-            {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-          </button>
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-r from-blue-500 to-purple-600 rounded-full mb-4">
+            <FiLock className="text-white text-2xl" aria-hidden />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">
+            Welcome Back
+          </h2>
+          <p className="text-gray-600">Sign in to your account</p>
         </div>
 
-        <Button loading={loading}>Login</Button>
-      </form>
+        {/* SERVER ERROR */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 text-sm p-3 rounded-lg mb-4">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* EMAIL */}
+          <div className="relative">
+            <FiMail
+              className="absolute top-4 left-3 text-gray-400"
+              aria-hidden
+            />
+            <Input
+              type="email"
+              placeholder="Enter your email"
+              {...register("email")}
+              aria-invalid={!!errors.email}
+              className="pl-10 h-12"
+            />
+            <FormError message={errors.email?.message} />
+          </div>
+
+          {/* PASSWORD */}
+          <div className="relative">
+            <FiLock
+              className="absolute top-4 left-3 text-gray-400"
+              aria-hidden
+            />
+            <Input
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+              {...register("password")}
+              aria-invalid={!!errors.password}
+              className="pl-10 pr-12 h-12"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute top-4 right-3 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? <FiEyeOff /> : <FiEye />}
+            </button>
+            <FormError message={errors.password?.message} />
+          </div>
+
+          <Button
+            loading={loading}
+            disabled={!emailValue || !passwordValue || loading}
+            className="w-full bg-linear-to-r from-blue-500 to-purple-600 text-white"
+          >
+            {loading ? "Signing In..." : "Sign In"}
+          </Button>
+        </form>
+      </div>
     </div>
   );
 };

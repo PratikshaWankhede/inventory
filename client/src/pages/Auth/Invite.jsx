@@ -63,7 +63,7 @@ const role = useSelector((state) => state.auth.role);
       </select>
 
     
-      <Button loading={loading}>
+      <Button loading={loading} className="bg-blue-600 text-white">
         Invite
       </Button>
     </form>

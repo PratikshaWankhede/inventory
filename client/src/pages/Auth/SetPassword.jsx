@@ -36,7 +36,7 @@ const SetPassword = () => {
         placeholder="New Password"
         onChange={(e) => setPwd(e.target.value)}
       />
-      <Button loading={loading}>Set Password</Button>
+      <Button loading={loading} className="bg-blue-600 text-white">Set Password</Button>
     </form>
   );
 };

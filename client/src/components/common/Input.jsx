@@ -12,9 +12,9 @@ const Input = ({
     {...rest}
     className={`
       w-full
-      h-11                /* ✅ FIXED HEIGHT */
+      h-11                
       px-3
-      pr-10               /* ✅ SPACE FOR ICON */
+      pr-10              
       mb-3
       border
       rounded
