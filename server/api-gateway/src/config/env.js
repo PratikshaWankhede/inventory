@@ -6,6 +6,6 @@ module.exports = {
 
   SERVICES: {
     AUTH: process.env.AUTH_SERVICE_URL,
-    // INVENTORY: process.env.INVENTORY_SERVICE_URL,
+    PRODUCT: process.env.PRODUCT_SERVICE_URL,
   },
 };

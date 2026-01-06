@@ -1,10 +1,12 @@
 const express = require("express");
-const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const connectDB = require("./config/connectDB");
-require("dotenv").config();
-const authRoutes = require("./routes/auth.routes");
 const errorMiddleware = require("./middlewares/error.middleware");
+require("dotenv").config();
+
+const productRoutes = require("./routes/product.routes");
+
 const app = express();
 
 // Middleware
@@ -13,14 +15,17 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173", 
-    credentials: true,               
+    origin: "http://localhost:5173",
+    credentials: true,
   })
 );
-
+app.use((req, res, next) => {
+  console.log(`[PRODUCT SERVICE] ${req.method} ${req.originalUrl}`);
+  next();
+});
 
 // Routes
-app.use("/api/auth", authRoutes);
+app.use("/products", productRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -30,11 +35,11 @@ app.use((req, res) => {
   });
 });
 
-// Error handling middleware
+// Error handling middleware (must be last)
 app.use(errorMiddleware);
 
-const PORT = process.env.PORT || 4001;
+const PORT = process.env.PORT || 4002;
 app.listen(PORT, () => {
-  console.log(`Auth service running on port ${PORT}`);
+  console.log(`Product service running on port ${PORT}`);
   connectDB();
 });

@@ -4,12 +4,8 @@ const ctrl = require("../controllers/auth.controller");
 const auth = require("../middlewares/auth.middleware");
 const role = require("../middlewares/role.middleware");
 
-router.post(
-  "/invite",
-  auth,                     // ✅ Auth first
-  role("ADMIN", "MANAGER"), // ✅ Role check
-  ctrl.inviteUser
-);
+router.post("/invite",auth,role("ADMIN", "MANAGER"), 
+  ctrl.inviteUser);
 
 router.post("/set-password", ctrl.setPassword);
 router.post("/login", ctrl.login);
