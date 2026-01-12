@@ -9,6 +9,7 @@ import DashboardLayout from "./components/layout/DashboardLayout";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { checkAuth } from "./features/auth/authSlice";
+import ProductForm from "./pages/Product/ProductForm";
 
 const App= () => {
    const dispatch = useDispatch();
@@ -44,6 +45,23 @@ const App= () => {
             </ProtectedRoute>
           }
         />
+          {/* <Route
+            path="products"
+            element={
+              <ProtectedRoute>
+                <ProductList />
+              </ProtectedRoute>
+            }
+          /> */}
+
+          <Route
+            path="products"
+            element={
+              <ProtectedRoute >
+                <ProductForm/>
+              </ProtectedRoute>
+            }
+          />
       </Route>
     </Routes>
   </>

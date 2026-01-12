@@ -6,7 +6,7 @@ export const login = createAsyncThunk(
   "auth/login",
   async (credentials, thunkAPI) => {
     try {
-      const res = await api.post("/auth/login", credentials);
+      const res = await api.post("/api/auth/login", credentials);
       return res.data; // expect { role, user }
     } catch (err) {
       return thunkAPI.rejectWithValue(
@@ -20,7 +20,7 @@ export const checkAuth = createAsyncThunk(
   "auth/checkAuth",
   async (_, thunkAPI) => {
     try {
-      const res = await api.get("/auth/me");
+      const res = await api.get("/api/auth/me");
       return res.data.user;
     } catch (err) {
       return thunkAPI.rejectWithValue("Not authenticated",err);
@@ -36,7 +36,7 @@ export const logout = createAsyncThunk(
   "auth/logout",
   async (_, thunkAPI) => {
     try {
-      await api.post("/auth/logout");
+      await api.post("/api/auth/logout");
     } catch (err) {
       return thunkAPI.rejectWithValue("Logout failed", err);
     }
@@ -47,7 +47,7 @@ export const inviteUser = createAsyncThunk(
   "auth/inviteUser",
   async (data, thunkAPI) => {
     try {
-      const res = await api.post("/auth/invite", data);
+      const res = await api.post("/api/auth/invite", data);
       return res.data?.message || "Invitation sent";
     } catch (err) {
       return thunkAPI.rejectWithValue(
@@ -62,7 +62,7 @@ export const setPassword = createAsyncThunk(
   "auth/setPassword",
   async (data, thunkAPI) => {
     try {
-      const res = await api.post("/auth/set-password", data);
+      const res = await api.post("/api/auth/set-password", data);
       return res.data;
     } catch (err) {
       return thunkAPI.rejectWithValue(

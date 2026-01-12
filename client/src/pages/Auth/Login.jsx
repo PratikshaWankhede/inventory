@@ -32,11 +32,9 @@ const Login = () => {
 
   const [showPassword, setShowPassword] = useState(false);
 
-  // eslint-disable-next-line react-hooks/incompatible-library
   const emailValue = watch("email");
   const passwordValue = watch("password");
 
-  // 🔐 Submit Handler
   const onSubmit = (data) => {
     if (loading) return;
 
@@ -48,14 +46,12 @@ const Login = () => {
     );
   };
 
-  //  Navigate after successful login
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/", { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
-  // 🧹 Clear server errors on route change / unmount
   useEffect(() => {
     return () => {
       dispatch(clearAuthError());
@@ -63,73 +59,79 @@ const Login = () => {
   }, [dispatch]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-400 to-white p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
 
+        {/* HEADER */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-r from-blue-500 to-purple-600 rounded-full mb-4">
-            <FiLock className="text-white text-2xl" aria-hidden />
-          </div>
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">
-            Welcome Back
-          </h2>
-          <p className="text-gray-600">Sign in to your account</p>
+          <h1 className="text-2xl font-semibold text-gray-800">
+            Inventory Management System
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Sign in with your corporate account
+          </p>
         </div>
 
         {/* SERVER ERROR */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 text-sm p-3 rounded-lg mb-4">
+          <div className="bg-red-50 border border-red-200 text-red-600 text-sm p-3 rounded mb-4">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+
           {/* EMAIL */}
-          <div className="relative">
-            <FiMail
-              className="absolute top-4 left-3 text-gray-400"
-              aria-hidden
-            />
-            <Input
-              type="email"
-              placeholder="Enter your email"
-              {...register("email")}
-              aria-invalid={!!errors.email}
-              className="pl-10 h-12"
-            />
+          <div>
+
+            <div className="relative">
+              <FiMail className="absolute top-3.5 left-3 text-gray-400" />
+              <Input
+                type="email"
+                {...register("email")}
+                placeholder="name@company/email.com"
+                aria-invalid={!!errors.email}
+                className="pl-10 h-11"
+              />
+            </div>
             <FormError message={errors.email?.message} />
           </div>
 
           {/* PASSWORD */}
-          <div className="relative">
-            <FiLock
-              className="absolute top-4 left-3 text-gray-400"
-              aria-hidden
-            />
-            <Input
-              type={showPassword ? "text" : "password"}
-              placeholder="Enter your password"
-              {...register("password")}
-              aria-invalid={!!errors.password}
-              className="pl-10 pr-12 h-12"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute top-4 right-3 text-gray-400 hover:text-gray-600"
-            >
-              {showPassword ? <FiEyeOff /> : <FiEye />}
-            </button>
+          <div>
+            <div className="relative">
+              <FiLock className="absolute top-3.5 left-3 text-gray-400" />
+              <Input
+                type={showPassword ? "text" : "password"}
+                {...register("password")}
+                placeholder="Enter your password"
+                aria-invalid={!!errors.password}
+                className="pl-10 pr-12 h-11"
+              />
+              <button
+                type="button"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute top-4 right-3 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <FiEyeOff /> : <FiEye />}
+              </button>
+            </div>
             <FormError message={errors.password?.message} />
           </div>
 
+          {/* ACTION */}
           <Button
             loading={loading}
             disabled={!emailValue || !passwordValue || loading}
-            className="w-full bg-linear-to-r from-blue-500 to-purple-600 text-white"
+            className="w-full bg-gray-900 text-white hover:bg-gray-800"
           >
-            {loading ? "Signing In..." : "Sign In"}
+            {loading ? "Signing in..." : "Sign in"}
           </Button>
+
+          {/* <p className="text-xs text-gray-500 text-center">
+            Authorized personnel only.
+          </p> */}
         </form>
       </div>
     </div>

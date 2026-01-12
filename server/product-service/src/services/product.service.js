@@ -1,7 +1,9 @@
 const Product = require("../models/product.model");
 const ApiError = require("../utils/ApiError");
 
-const createProduct = async (data,userId) => {
+
+
+const createProduct = async (data, userId) => {
   if (!data || typeof data !== "object") {
     throw new ApiError(400, "Invalid product payload");
   }
@@ -10,16 +12,35 @@ const createProduct = async (data,userId) => {
     throw new ApiError(400, "SKU is required");
   }
 
-  data.sku = data.sku.toUpperCase();
-
-  const existing = await Product.findOne({ sku: data.sku });
-  if (existing) {
-    throw new ApiError(400, "Product with this SKU already exists");
+  if (!data.category) {
+    throw new ApiError(400, "Category is required");
   }
 
-  const product = await Product.create({ ...data, createdBy: userId });
-  return product;
+  // 🔹 Normalize SKU
+  data.sku = data.sku.toUpperCase();
+
+  try {
+    const product = await Product.create({
+      ...data,
+      createdBy: userId,   // audit handled by backend
+    });
+
+    return product;
+
+  } catch (err) {
+    // 🔹 Enterprise duplicate handling
+    if (err.code === 11000) {
+      throw new ApiError(409, "Product with this SKU already exists");
+    }
+
+    throw err;
+  }
 };
+
+module.exports = {
+  createProduct,
+};
+
 
 const getProducts = async (filters) => {
   const {
@@ -32,46 +53,72 @@ const getProducts = async (filters) => {
     includeInactive = false,
   } = filters;
 
-  const query = {};
+  const matchStage = {};
 
+  // 🔹 Active filter
   if (!includeInactive) {
-    query.isActive = true;
+    matchStage.isActive = true;
   }
 
+  // 🔹 Category filter
   if (category) {
-    query.category = category;
+    matchStage.category = category;
   }
 
+  // 🔹 Search filter
   if (search) {
-    // basic text search across name / description / sku
-    query.$or = [
+    matchStage.$or = [
       { name: { $regex: search, $options: "i" } },
       { description: { $regex: search, $options: "i" } },
       { sku: { $regex: search, $options: "i" } },
     ];
   }
 
-  const skip = (page - 1) * limit;
-
-  const sort = {
+  const sortStage = {
     [sortBy]: sortOrder === "asc" ? 1 : -1,
   };
 
-  const [items, total] = await Promise.all([
-    Product.find(query).sort(sort).skip(skip).limit(limit),
-    Product.countDocuments(query),
-  ]);
+  const pipeline = [
+    { $match: matchStage },
+
+    // 🔹 Sort before pagination
+    { $sort: sortStage },
+
+    // 🔹 Facet = data + count in one query
+    {
+      $facet: {
+        items: [
+          { $skip: (page - 1) * limit },
+          { $limit: limit },
+        ],
+        totalCount: [
+          { $count: "count" },
+        ],
+      },
+    },
+
+    // 🔹 Normalize response
+    {
+      $project: {
+        items: 1,
+        total: { $ifNull: [{ $arrayElemAt: ["$totalCount.count", 0] }, 0] },
+      },
+    },
+  ];
+
+  const [result] = await Product.aggregate(pipeline);
 
   return {
-    items,
+    items: result.items,
     meta: {
       page,
       limit,
-      total,
-      totalPages: Math.ceil(total / limit) || 1,
+      total: result.total,
+      totalPages: Math.ceil(result.total / limit) || 1,
     },
   };
 };
+
 
 const getProductById = async (id) => {
   const product = await Product.findById(id);
