@@ -3,6 +3,8 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const connectDB = require("./config/connectDB");
 const errorMiddleware = require("./middlewares/error.middleware");
+const categoryRoutes = require("./routes/category.routes");
+
 require("dotenv").config();
 
 const productRoutes = require("./routes/product.routes");
@@ -26,7 +28,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use("/products", productRoutes);
-
+app.use("/categories", categoryRoutes);
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({

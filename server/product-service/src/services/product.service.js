@@ -1,8 +1,8 @@
 const Product = require("../models/product.model");
+const Category = require("../models/category.model"); // ✅ NEW
 const ApiError = require("../utils/ApiError");
 
-
-
+/* ---------------- CREATE ---------------- */
 const createProduct = async (data, userId) => {
   if (!data || typeof data !== "object") {
     throw new ApiError(400, "Invalid product payload");
@@ -16,32 +16,36 @@ const createProduct = async (data, userId) => {
     throw new ApiError(400, "Category is required");
   }
 
+  // 🔹 Validate category existence & status
+  const categoryExists = await Category.findOne({
+    _id: data.category,
+    isActive: true,
+  });
+
+  if (!categoryExists) {
+    throw new ApiError(400, "Invalid or inactive category");
+  }
+
   // 🔹 Normalize SKU
   data.sku = data.sku.toUpperCase();
 
   try {
     const product = await Product.create({
       ...data,
-      createdBy: userId,   // audit handled by backend
+      createdBy: userId,
     });
 
     return product;
 
   } catch (err) {
-    // 🔹 Enterprise duplicate handling
     if (err.code === 11000) {
       throw new ApiError(409, "Product with this SKU already exists");
     }
-
     throw err;
   }
 };
 
-module.exports = {
-  createProduct,
-};
-
-
+/* ---------------- LIST ---------------- */
 const getProducts = async (filters) => {
   const {
     page = 1,
@@ -55,17 +59,16 @@ const getProducts = async (filters) => {
 
   const matchStage = {};
 
-  // 🔹 Active filter
   if (!includeInactive) {
     matchStage.isActive = true;
   }
 
-  // 🔹 Category filter
+  // 🔹 Category filter (ObjectId)
   if (category) {
     matchStage.category = category;
   }
 
-  // 🔹 Search filter
+  // 🔹 Search
   if (search) {
     matchStage.$or = [
       { name: { $regex: search, $options: "i" } },
@@ -81,27 +84,24 @@ const getProducts = async (filters) => {
   const pipeline = [
     { $match: matchStage },
 
-    // 🔹 Sort before pagination
     { $sort: sortStage },
 
-    // 🔹 Facet = data + count in one query
     {
       $facet: {
         items: [
           { $skip: (page - 1) * limit },
-          { $limit: limit },
+          { $limit: Number(limit) },
         ],
-        totalCount: [
-          { $count: "count" },
-        ],
+        totalCount: [{ $count: "count" }],
       },
     },
 
-    // 🔹 Normalize response
     {
       $project: {
         items: 1,
-        total: { $ifNull: [{ $arrayElemAt: ["$totalCount.count", 0] }, 0] },
+        total: {
+          $ifNull: [{ $arrayElemAt: ["$totalCount.count", 0] }, 0],
+        },
       },
     },
   ];
@@ -111,24 +111,28 @@ const getProducts = async (filters) => {
   return {
     items: result.items,
     meta: {
-      page,
-      limit,
+      page: Number(page),
+      limit: Number(limit),
       total: result.total,
       totalPages: Math.ceil(result.total / limit) || 1,
     },
   };
 };
 
-
+/* ---------------- GET BY ID ---------------- */
 const getProductById = async (id) => {
-  const product = await Product.findById(id);
+  const product = await Product.findById(id)
+    .populate("category", "name"); // ✅ populate category
+
   if (!product) {
     throw new ApiError(404, "Product not found");
   }
+
   return product;
 };
 
-const updateProduct = async (id, data,userId) => {
+/* ---------------- UPDATE ---------------- */
+const updateProduct = async (id, data, userId) => {
   if (!data || typeof data !== "object") {
     throw new ApiError(400, "Invalid product payload");
   }
@@ -137,10 +141,23 @@ const updateProduct = async (id, data,userId) => {
     data.sku = data.sku.toUpperCase();
   }
 
-  const product = await Product.findByIdAndUpdate(id, {...data, updatedBy: userId}, {
-    new: true,
-    runValidators: true,
-  });
+  // 🔹 If category is being changed → validate again
+  if (data.category) {
+    const categoryExists = await Category.findOne({
+      _id: data.category,
+      isActive: true,
+    });
+
+    if (!categoryExists) {
+      throw new ApiError(400, "Invalid or inactive category");
+    }
+  }
+
+  const product = await Product.findByIdAndUpdate(
+    id,
+    { ...data, updatedBy: userId },
+    { new: true, runValidators: true }
+  );
 
   if (!product) {
     throw new ApiError(404, "Product not found");
@@ -149,11 +166,15 @@ const updateProduct = async (id, data,userId) => {
   return product;
 };
 
-const deleteProduct = async (id,userId) => {
-  // soft delete by marking inactive rather than removing the document
+/* ---------------- DELETE (SOFT) ---------------- */
+const deleteProduct = async (id, userId) => {
   const product = await Product.findByIdAndUpdate(
     id,
-    { isActive: false ,deletedBy: userId, deletedAt: new Date() },
+    {
+      isActive: false,
+      deletedBy: userId,
+      deletedAt: new Date(),
+    },
     { new: true }
   );
 
@@ -171,4 +192,3 @@ module.exports = {
   updateProduct,
   deleteProduct,
 };
-
