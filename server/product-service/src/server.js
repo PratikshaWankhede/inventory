@@ -27,8 +27,8 @@ app.use((req, res, next) => {
 });
 
 // Routes
-app.use("/products", productRoutes);
-app.use("/categories", categoryRoutes);
+app.use("/products/product", productRoutes);
+app.use("/products/categories", categoryRoutes);
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
