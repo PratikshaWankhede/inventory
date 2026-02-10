@@ -14,7 +14,7 @@
 //       trim: true,
 //       uppercase: true,
 //     },
-  
+
 //     price: {
 //       type: Number,
 //       required: true,
@@ -70,7 +70,6 @@
 // const Product = mongoose.model("Product", productSchema);
 
 // module.exports = Product;
-
 
 const mongoose = require("mongoose");
 
@@ -133,6 +132,10 @@ const productSchema = new mongoose.Schema(
       min: 0,
       default: 0,
     },
+    priceIncludesTax: {
+      type: Boolean,
+      default: false, // false = GST extra, true = GST inclusive (MRP)
+    },
 
     barcode: {
       type: String,
@@ -170,7 +173,7 @@ const productSchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // 🔹 Search index
