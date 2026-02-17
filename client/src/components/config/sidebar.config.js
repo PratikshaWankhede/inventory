@@ -19,7 +19,8 @@ export const SIDEBAR_MENU = [
     roles: ["ADMIN", "MANAGER", "STAFF"],
     children: [
       { label: "Products", path: "/products", roles: ["ADMIN", "MANAGER"] },
-      { label: "Stock", path: "/inventory", roles: ["ADMIN", "MANAGER", "STAFF"] },
+      { label: "Categories", path: "/categories", roles: ["ADMIN", "MANAGER"] },
+      { label: "Stock",path: "/inventory",roles: ["ADMIN", "MANAGER", "STAFF"]},
     ],
   },
 ];

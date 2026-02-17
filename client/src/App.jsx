@@ -10,41 +10,40 @@ import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { checkAuth } from "./features/auth/authSlice";
 import ProductForm from "./pages/Product/ProductForm";
+import CategoryPage from "./pages/Category/CategoryPage";
 
-const App= () => {
-   const dispatch = useDispatch();
-
+const App = () => {
+  const dispatch = useDispatch();
 
   useEffect(() => {
     dispatch(checkAuth());
   }, [dispatch]);
 
   return (
-  <>
-  
-    <Toastify />
-    <Routes>
-      <Route path="/login" element={<Login />} />
+    <>
+      <Toastify />
+      <Routes>
+        <Route path="/login" element={<Login />} />
 
-      <Route path="/set-password" element={<SetPassword />} />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<Dashboard />} />
-
+        <Route path="/set-password" element={<SetPassword />} />
         <Route
-          path="invite"
+          path="/"
           element={
-            <ProtectedRoute roles={["ADMIN", "MANAGER"]}>
-              <Invite />
+            <ProtectedRoute>
+              <DashboardLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<Dashboard />} />
+
+          <Route
+            path="invite"
+            element={
+              <ProtectedRoute roles={["ADMIN", "MANAGER"]}>
+                <Invite />
+              </ProtectedRoute>
+            }
+          />
           {/* <Route
             path="products"
             element={
@@ -57,14 +56,22 @@ const App= () => {
           <Route
             path="products"
             element={
-              <ProtectedRoute >
-                <ProductForm/>
+              <ProtectedRoute>
+                <ProductForm />
               </ProtectedRoute>
             }
           />
-      </Route>
-    </Routes>
-  </>
+          <Route
+            path="categories"
+            element={
+              <ProtectedRoute roles={["ADMIN", "MANAGER"]}>
+                <CategoryPage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+      </Routes>
+    </>
   );
 };
 
