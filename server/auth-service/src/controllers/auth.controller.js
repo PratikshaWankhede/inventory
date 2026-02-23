@@ -30,7 +30,7 @@ exports.login = asyncHandler(async (req, res) => {
     httpOnly: true, // ❗ cannot be accessed by JS
     secure: process.env.NODE_ENV === "production", // HTTPS only in prod
     sameSite: "lax", // CSRF protection
-    maxAge: 15 * 60 * 1000, // 15 minutes
+    maxAge:30* 60 * 1000, // 15 minutes
   });
   res.json({
     success: true,

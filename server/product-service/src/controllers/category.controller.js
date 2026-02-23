@@ -45,6 +45,22 @@ exports.updateCategory = asyncHandler(async (req, res) => {
   });
 });
 
+exports.updateCategoryStatus = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+
+  const category = await categoryService.updateCategoryStatus(
+    req.params.id,
+    status,
+    req.user.id
+  );
+
+  res.json({
+    success: true,
+    message: "Category status updated successfully",
+    data: category,
+  });
+});
+
 exports.deleteCategory = asyncHandler(async (req, res) => {
   const category = await categoryService.deleteCategory(
     req.params.id,
@@ -53,6 +69,22 @@ exports.deleteCategory = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
+    data: category,
+  });
+});
+
+
+exports.restoreCategory = asyncHandler(async (req, res) => {
+
+  const category =
+    await categoryService.restoreCategory(
+      req.params.id,
+      req.user.id
+    );
+
+  res.json({
+    success: true,
+    message: "Category restored successfully",
     data: category,
   });
 });

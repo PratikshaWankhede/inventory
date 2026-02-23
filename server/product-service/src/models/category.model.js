@@ -5,7 +5,17 @@ const categorySchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
 
-    isActive: { type: Boolean, default: true },
+    status: {
+      type: String,
+      enum: ["ACTIVE", "INACTIVE", "ARCHIVED", "DELETED"],
+      default: "ACTIVE",
+      index: true
+    },
+    previousStatus: {
+  type: String,
+  enum: ["ACTIVE", "INACTIVE", "ARCHIVED"],
+  default: null,
+},
     // 🔹 Audit fields
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

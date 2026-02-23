@@ -21,10 +21,10 @@ app.use(
     credentials: true,
   })
 );
-app.use((req, res, next) => {
-  console.log(`[PRODUCT SERVICE] ${req.method} ${req.originalUrl}`);
-  next();
-});
+// app.use((req, res, next) => {
+//   console.log(`[PRODUCT SERVICE] ${req.method} ${req.originalUrl}`);
+//   next();
+// });
 
 // Routes
 app.use("/products/product", productRoutes);

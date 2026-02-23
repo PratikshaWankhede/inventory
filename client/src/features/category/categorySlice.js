@@ -1,44 +1,30 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../services/api";
 
-
-
-
 export const fetchCategories = createAsyncThunk(
   "category/fetchCategories",
   async (params = {}, { rejectWithValue }) => {
     try {
-      const res = await api.get(
-        "/products/categories/getCategory",
-        { params }
-      );
+      const res = await api.get("/products/categories/getCategory", { params });
 
       return res.data;
     } catch (err) {
-      return rejectWithValue(
-        err.response?.data?.message
-      );
+      return rejectWithValue(err.response?.data?.message);
     }
-  }
+  },
 );
-
 
 export const createCategory = createAsyncThunk(
   "category/createCategory",
   async (data, { rejectWithValue }) => {
     try {
-      const res = await api.post(
-        "/products/categories/createCategory",
-        data
-      );
+      const res = await api.post("/products/categories/createCategory", data);
 
       return res.data.data;
     } catch (err) {
-      return rejectWithValue(
-        err.response?.data?.message
-      );
+      return rejectWithValue(err.response?.data?.message);
     }
-  }
+  },
 );
 
 export const updateCategory = createAsyncThunk(
@@ -47,36 +33,57 @@ export const updateCategory = createAsyncThunk(
     try {
       const res = await api.put(
         `/products/categories/updateCategory/${id}`,
-        data
+        data,
       );
 
       return res.data.data;
     } catch (err) {
-      return rejectWithValue(
-        err.response?.data?.message
-      );
+      return rejectWithValue(err.response?.data?.message);
     }
-  }
+  },
 );
+export const updateCategoryStatus = createAsyncThunk(
+  "category/updateCategoryStatus",
+  async ({ id, status }, { rejectWithValue }) => {
+    try {
+      const res = await api.patch(`/products/categories/${id}/status`, {
+        status,
+      });
 
+      return res.data.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message);
+    }
+  },
+);
 
 export const deleteCategory = createAsyncThunk(
   "category/deleteCategory",
   async (id, { rejectWithValue }) => {
     try {
-      await api.delete(
-        `/products/categories/deleteCategory/${id}`
-      );
+      await api.delete(`/products/categories/deleteCategory/${id}`);
 
       return id;
     } catch (err) {
+      return rejectWithValue(err.response?.data?.message);
+    }
+  },
+);
+export const restoreCategory = createAsyncThunk(
+  "category/restoreCategory",
+  async (id, { rejectWithValue }) => {
+    try {
+      const res = await api.patch(
+        `/products/categories/restore/${id}`
+      );
+      return res.data.data;
+    } catch (err) {
       return rejectWithValue(
-        err.response?.data?.message
+        err.response?.data?.message || "Restore failed"
       );
     }
   }
 );
-
 
 const categorySlice = createSlice({
   name: "category",
@@ -96,7 +103,6 @@ const categorySlice = createSlice({
   extraReducers: (builder) => {
     builder
 
-      
       .addCase(fetchCategories.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -130,7 +136,16 @@ const categorySlice = createSlice({
 
       .addCase(updateCategory.fulfilled, (state, action) => {
         const index = state.categories.findIndex(
-          (category) => category._id === action.payload._id
+          (category) => category._id === action.payload._id,
+        );
+
+        if (index !== -1) {
+          state.categories[index] = action.payload;
+        }
+      })
+      .addCase(updateCategoryStatus.fulfilled, (state, action) => {
+        const index = state.categories.findIndex(
+          (category) => category._id === action.payload._id,
         );
 
         if (index !== -1) {
@@ -138,16 +153,28 @@ const categorySlice = createSlice({
         }
       })
 
-     
       .addCase(deleteCategory.fulfilled, (state, action) => {
-        state.categories = state.categories.filter(
-          (category) => category._id !== action.payload
-        );
-      });
+
+  const index = state.categories.findIndex(
+    (cat) => cat._id === action.payload._id
+  );
+
+  if (index !== -1) {
+    state.categories[index] = action.payload;  // 🔥 replace with updated soft deleted record
+  }
+})
+.addCase(restoreCategory.fulfilled, (state, action) => {
+  const index = state.categories.findIndex(
+    (c) => c._id === action.payload._id
+  );
+
+  if (index !== -1) {
+    state.categories[index] = action.payload;
+  }
+});
   },
 });
 
-export const { clearCategoryError } =
-  categorySlice.actions;
+export const { clearCategoryError } = categorySlice.actions;
 
 export default categorySlice.reducer;

@@ -48,6 +48,12 @@ router.put(
   categoryController.updateCategory
 );
 
+router.patch(
+  "/:id/status",
+  auth,
+  role("ADMIN", "MANAGER"),
+  categoryController.updateCategoryStatus
+);
 // Soft delete
 router.delete(
   "/deleteCategory/:id",
@@ -56,4 +62,11 @@ router.delete(
   categoryController.deleteCategory
 );
 
+
+router.patch(
+  "/restore/:id",
+ auth,
+  role("ADMIN", "MANAGER"),
+  categoryController.restoreCategory
+);
 module.exports = router;

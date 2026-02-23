@@ -12,38 +12,37 @@ import {
 import {
   fetchCategories,
   deleteCategory,
+  updateCategoryStatus,
+  restoreCategory
 } from "../../features/category/categorySlice";
 
-import { Filter, X } from "lucide-react";
+import { FiPlus } from "react-icons/fi";
 
 import CategoryList from "./CategoryList";
 import CreateCategoryForm from "./CategoryForm";
-
-import DebounceSearch from "../../components/common/DebounceSearch"
+import DebounceSearch from "../../components/common/DebounceSearch";
 import useDebounce from "../../hooks/useDebounce";
-
+import Modal from "../../components/common/Modal";
+import Pagination from "../../components/common/Pagination";
 import {
   showSuccess,
   showError,
 } from "../../components/common/toast.utils";
 
-export default function CategoryPage({
-  setEditData,
-}) {
+export default function CategoryPage({ setEditData }) {
+
   const dispatch = useDispatch();
 
   const { categories, meta, loading } =
     useSelector((s) => s.category);
 
-  /* ---------------- SEARCH STATE ---------------- */
-  const [search, setSearch] =
-    useState("");
+  /* ---------------- STATES ---------------- */
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] =
+    useState("ALL");
 
-  // Debounced value
-  const debouncedSearch =
-    useDebounce(search, 500);
-
-  /* ---------------- MODAL ---------------- */
+  const debouncedSearch = useDebounce(search, 500);
   const [openCreate, setOpenCreate] =
     useState(false);
 
@@ -52,174 +51,181 @@ export default function CategoryPage({
     dispatch(
       fetchCategories({
         search: debouncedSearch,
+        page,
+        limit: 3,
+        status: statusFilter,
       })
     );
-  }, [dispatch, debouncedSearch]);
+  }, [dispatch, debouncedSearch, page, statusFilter]);
 
   /* ---------------- CALLBACKS ---------------- */
 
-  // Stable search handler
-  const handleSearchChange =
-    useCallback((value) => {
+  const handleSearchChange = useCallback(
+    (value) => {
       setSearch(value);
-    }, []);
+      setPage(1);
+    },
+    []
+  );
 
-  // Stable delete
-  const handleDelete =
+  const handlePageChange = useCallback(
+    (p) => {
+      setPage(p);
+    },
+    []
+  );
+
+  const handleDelete = useCallback(
+    async (id) => {
+      if (!window.confirm("Delete category?"))
+        return;
+
+      try {
+        await dispatch(
+          deleteCategory(id)
+        ).unwrap();
+
+        showSuccess("Category deleted");
+
+        // 🔥 Refresh after delete
+        dispatch(
+          fetchCategories({
+            search: debouncedSearch,
+            page,
+            limit: 3,
+            status: statusFilter,
+          })
+        );
+
+      } catch (err) {
+        showError(err);
+      }
+    },
+    [dispatch, debouncedSearch, page, statusFilter]
+  );
+
+  const handleStatusChange =
     useCallback(
-      async (id) => {
-        if (
-          !window.confirm(
-            "Delete category?"
-          )
-        )
-          return;
-
+      async (id, newStatus) => {
         try {
           await dispatch(
-            deleteCategory(id)
+            updateCategoryStatus({
+              id,
+              status: newStatus,
+            })
           ).unwrap();
 
-          showSuccess(
-            "Category deleted"
-          );
+          showSuccess("Status updated");
 
-          dispatch(
-            fetchCategories({
-              search:
-                debouncedSearch,
-            })
-          );
         } catch (err) {
           showError(err);
         }
       },
-      [dispatch, debouncedSearch]
+      [dispatch]
     );
 
-  // Stable status
-  const handleStatusChange =
-    useCallback((id, value) => {
-      console.log(
-        "Status:",
-        id,
-        value
-      );
-    }, []);
-
-  /* ---------------- CREATE SUCCESS ---------------- */
   const handleCreateSuccess =
     useCallback(() => {
       setOpenCreate(false);
+    }, []);
+
+    const handleRestore = useCallback(
+  async (id) => {
+
+    if (!window.confirm("Restore this category?"))
+      return;
+
+    try {
+      await dispatch(
+        restoreCategory(id)
+      ).unwrap();
+
+      showSuccess("Category restored");
 
       dispatch(
         fetchCategories({
-          search:
-            debouncedSearch,
+          search: debouncedSearch,
+          page,
+          limit: 3,
+          status: statusFilter,
         })
       );
-    }, [dispatch, debouncedSearch]);
+
+    } catch (err) {
+      showError(err);
+    }
+  },
+  [dispatch, debouncedSearch, page, statusFilter]
+);
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
 
       {/* HEADER */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">
+      <div className="flex justify-between mb-6">
+        <h1 className="text-xl font-semibold">
           Categories
         </h1>
 
         <button
-          onClick={() =>
-            setOpenCreate(true)
-          }
-          className="
-            bg-indigo-600 text-white
-            px-4 py-2 rounded-lg shadow
-            hover:bg-indigo-700
-          "
+          onClick={() => setOpenCreate(true)}
+          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg"
         >
-          + New Category
+          <FiPlus />
+          New Category
         </button>
       </div>
 
-      {/* SEARCH (Optimized) */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border mb-4 flex items-center gap-3">
+      {/* SEARCH + FILTER */}
+      <div className="bg-white p-4 rounded-xl shadow border mb-4 flex gap-3">
 
         <DebounceSearch
           value={search}
-          onChange={
-            handleSearchChange
-          }
-          placeholder="Search"
+          onChange={handleSearchChange}
+          placeholder="Search category..."
         />
 
-        <button className="flex items-center gap-2 border px-4 py-2 rounded-lg bg-gray-50 hover:bg-gray-100">
-          <Filter size={18} />
-          Filters
-        </button>
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
+          className="border px-3 py-2 rounded-lg bg-gray-50"
+        >
+          <option value="ALL">All</option>
+          <option value="ACTIVE">Active</option>
+          <option value="INACTIVE">Inactive</option>
+          <option value="ARCHIVED">Archived</option>
+          <option value="DELETED">Deleted</option>
+        </select>
       </div>
 
-      {/* TABLE */}
       <CategoryList
         categories={categories}
         loading={loading}
         setEditData={setEditData}
         handleDelete={handleDelete}
-        handleStatusChange={
-          handleStatusChange
-        }
+        handleStatusChange={handleStatusChange}
+         handleRestore={handleRestore}
       />
 
-      {/* FOOTER */}
-      <div className="flex justify-between px-2 py-4 text-xs text-gray-500">
-        <span>
-          Total: {meta?.total || 0}
-        </span>
-        <span>
-          Page {meta?.page || 1}
-        </span>
-      </div>
+      <Pagination
+        page={meta?.page || 1}
+        limit={meta?.limit || 3}
+        total={meta?.total || 0}
+        onPageChange={handlePageChange}
+      />
 
-      {/* CREATE DRAWER */}
-      {openCreate && (
-        <div className="fixed inset-0 z-50 flex">
-
-          <div
-            onClick={() =>
-              setOpenCreate(false)
-            }
-            className="flex-1 bg-black/40 backdrop-blur-sm"
-          />
-
-          <div className="w-[420px] bg-white h-full shadow-xl border-l flex flex-col">
-
-            <div className="flex items-center justify-between px-5 py-4 border-b">
-              <h2 className="font-semibold text-gray-800">
-                Create Category
-              </h2>
-
-              <button
-                onClick={() =>
-                  setOpenCreate(false)
-                }
-                className="p-1 hover:bg-gray-100 rounded"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="p-5 overflow-y-auto">
-              <CreateCategoryForm
-                onSuccess={
-                  handleCreateSuccess
-                }
-              />
-            </div>
-
-          </div>
-        </div>
-      )}
+      <Modal
+        isOpen={openCreate}
+        onClose={() => setOpenCreate(false)}
+        title="Create Category"
+      >
+        <CreateCategoryForm
+          onSuccess={handleCreateSuccess}
+        />
+      </Modal>
     </div>
   );
 }
