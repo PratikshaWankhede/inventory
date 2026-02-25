@@ -13,13 +13,13 @@ import {
   fetchCategories,
   deleteCategory,
   updateCategoryStatus,
-  restoreCategory
+  restoreCategory,
 } from "../../features/category/categorySlice";
 
 import { FiPlus } from "react-icons/fi";
 
 import CategoryList from "./CategoryList";
-import CreateCategoryForm from "./CategoryForm";
+import CategoryForm from "./CategoryForm";
 import DebounceSearch from "../../components/common/DebounceSearch";
 import useDebounce from "../../hooks/useDebounce";
 import Modal from "../../components/common/Modal";
@@ -29,25 +29,30 @@ import {
   showError,
 } from "../../components/common/toast.utils";
 
-export default function CategoryPage({ setEditData }) {
-
+export default function CategoryPage() {
   const dispatch = useDispatch();
 
   const { categories, meta, loading } =
     useSelector((s) => s.category);
 
-  /* ---------------- STATES ---------------- */
+  /* ================= STATE ================= */
+
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] =
     useState("ALL");
 
-  const debouncedSearch = useDebounce(search, 500);
-  const [openCreate, setOpenCreate] =
+  const [openModal, setOpenModal] =
     useState(false);
 
-  /* ---------------- FETCH ---------------- */
-  useEffect(() => {
+  const [editData, setEditData] =
+    useState(null);
+
+  const debouncedSearch = useDebounce(search, 500);
+
+  /* ================= FETCH ================= */
+
+  const fetchData = useCallback(() => {
     dispatch(
       fetchCategories({
         search: debouncedSearch,
@@ -56,24 +61,49 @@ export default function CategoryPage({ setEditData }) {
         status: statusFilter,
       })
     );
-  }, [dispatch, debouncedSearch, page, statusFilter]);
+  }, [
+    dispatch,
+    debouncedSearch,
+    page,
+    statusFilter,
+  ]);
 
-  /* ---------------- CALLBACKS ---------------- */
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-  const handleSearchChange = useCallback(
-    (value) => {
+  /* ================= HANDLERS ================= */
+
+  const handleSearchChange =
+    useCallback((value) => {
       setSearch(value);
       setPage(1);
+    }, []);
+
+  const handlePageChange =
+    useCallback((p) => {
+      setPage(p);
+    }, []);
+
+  const handleOpenCreate =
+    useCallback(() => {
+      setEditData(null);
+      setOpenModal(true);
+    }, []);
+
+  const handleEdit = useCallback(
+    (category) => {
+      setEditData(category);
+      setOpenModal(true);
     },
     []
   );
 
-  const handlePageChange = useCallback(
-    (p) => {
-      setPage(p);
-    },
-    []
-  );
+  const handleCloseModal =
+    useCallback(() => {
+      setOpenModal(false);
+      setEditData(null);
+    }, []);
 
   const handleDelete = useCallback(
     async (id) => {
@@ -86,37 +116,51 @@ export default function CategoryPage({ setEditData }) {
         ).unwrap();
 
         showSuccess("Category deleted");
-
-        // 🔥 Refresh after delete
-        dispatch(
-          fetchCategories({
-            search: debouncedSearch,
-            page,
-            limit: 3,
-            status: statusFilter,
-          })
-        );
-
+        fetchData();
       } catch (err) {
         showError(err);
       }
     },
-    [dispatch, debouncedSearch, page, statusFilter]
+    [dispatch, fetchData]
+  );
+
+  const handleRestore = useCallback(
+    async (id) => {
+      if (
+        !window.confirm(
+          "Restore this category?"
+        )
+      )
+        return;
+
+      try {
+        await dispatch(
+          restoreCategory(id)
+        ).unwrap();
+
+        showSuccess("Category restored");
+        fetchData();
+      } catch (err) {
+        showError(err);
+      }
+    },
+    [dispatch, fetchData]
   );
 
   const handleStatusChange =
     useCallback(
-      async (id, newStatus) => {
+      async (id, status) => {
         try {
           await dispatch(
             updateCategoryStatus({
               id,
-              status: newStatus,
+              status,
             })
           ).unwrap();
 
-          showSuccess("Status updated");
-
+          showSuccess(
+            "Status updated successfully"
+          );
         } catch (err) {
           showError(err);
         }
@@ -124,61 +168,33 @@ export default function CategoryPage({ setEditData }) {
       [dispatch]
     );
 
-  const handleCreateSuccess =
+  const handleFormSuccess =
     useCallback(() => {
-      setOpenCreate(false);
-    }, []);
+      handleCloseModal();
+      fetchData();
+    }, [handleCloseModal, fetchData]);
 
-    const handleRestore = useCallback(
-  async (id) => {
-
-    if (!window.confirm("Restore this category?"))
-      return;
-
-    try {
-      await dispatch(
-        restoreCategory(id)
-      ).unwrap();
-
-      showSuccess("Category restored");
-
-      dispatch(
-        fetchCategories({
-          search: debouncedSearch,
-          page,
-          limit: 3,
-          status: statusFilter,
-        })
-      );
-
-    } catch (err) {
-      showError(err);
-    }
-  },
-  [dispatch, debouncedSearch, page, statusFilter]
-);
+  /* ================= UI ================= */
 
   return (
-    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
-
-      {/* HEADER */}
-      <div className="flex justify-between mb-6">
+    <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl font-semibold">
           Categories
         </h1>
 
         <button
-          onClick={() => setOpenCreate(true)}
-          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg"
+          onClick={handleOpenCreate}
+          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
         >
           <FiPlus />
           New Category
         </button>
       </div>
 
-      {/* SEARCH + FILTER */}
+      {/* Search + Filter */}
       <div className="bg-white p-4 rounded-xl shadow border mb-4 flex gap-3">
-
         <DebounceSearch
           value={search}
           onChange={handleSearchChange}
@@ -193,23 +209,32 @@ export default function CategoryPage({ setEditData }) {
           }}
           className="border px-3 py-2 rounded-lg bg-gray-50"
         >
-          <option value="ALL">All</option>
-          <option value="ACTIVE">Active</option>
-          <option value="INACTIVE">Inactive</option>
-          <option value="ARCHIVED">Archived</option>
-          <option value="DELETED">Deleted</option>
+          <option value="ALL">
+            All
+          </option>
+          <option value="ACTIVE">
+            Active
+          </option>
+          <option value="INACTIVE">
+            Inactive
+          </option>
+          <option value="DELETED">
+            Deleted
+          </option>
         </select>
       </div>
 
+      {/* List */}
       <CategoryList
         categories={categories}
         loading={loading}
-        setEditData={setEditData}
-        handleDelete={handleDelete}
-        handleStatusChange={handleStatusChange}
-         handleRestore={handleRestore}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onRestore={handleRestore}
+        onStatusChange={handleStatusChange}
       />
 
+      {/* Pagination */}
       <Pagination
         page={meta?.page || 1}
         limit={meta?.limit || 3}
@@ -217,13 +242,19 @@ export default function CategoryPage({ setEditData }) {
         onPageChange={handlePageChange}
       />
 
+      {/* Modal */}
       <Modal
-        isOpen={openCreate}
-        onClose={() => setOpenCreate(false)}
-        title="Create Category"
+        isOpen={openModal}
+        onClose={handleCloseModal}
+        title={
+          editData
+            ? "Update Category"
+            : "Create Category"
+        }
       >
-        <CreateCategoryForm
-          onSuccess={handleCreateSuccess}
+        <CategoryForm
+          editData={editData}
+          onSuccess={handleFormSuccess}
         />
       </Modal>
     </div>

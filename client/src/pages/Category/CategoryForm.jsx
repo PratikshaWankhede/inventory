@@ -1,9 +1,21 @@
-import { useDispatch, useSelector } from "react-redux";
+import {
+  useEffect,
+} from "react";
+
+import {
+  useDispatch,
+  useSelector,
+} from "react-redux";
+
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 
+import {
+  createCategory,
+  updateCategory,
+} from "../../features/category/categorySlice";
+
 import { categorySchema } from "../../validation/category.validation";
-import { createCategory } from "../../features/category/categorySlice";
 
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
@@ -12,10 +24,13 @@ import {
   showError,
 } from "../../components/common/toast.utils";
 
-const CreateCategoryForm = ({  onSuccess,}) => {
+const CategoryForm = ({
+  editData,
+  onSuccess,
+}) => {
   const dispatch = useDispatch();
 
-  const { loading, error } = useSelector(
+  const { loading } = useSelector(
     (state) => state.category
   );
 
@@ -23,11 +38,24 @@ const CreateCategoryForm = ({  onSuccess,}) => {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isValid },
   } = useForm({
     resolver: yupResolver(categorySchema),
     mode: "onChange",
   });
+
+  /* ================= PREFILL ================= */
+
+  useEffect(() => {
+    if (editData) {
+      setValue("name", editData.name);
+    } else {
+      reset({ name: "" });
+    }
+  }, [editData, setValue, reset]);
+
+  /* ================= SUBMIT ================= */
 
   const onSubmit = async (data) => {
     try {
@@ -35,35 +63,41 @@ const CreateCategoryForm = ({  onSuccess,}) => {
         name: data.name.trim().toLowerCase(),
       };
 
-      await dispatch(createCategory(payload)).unwrap();
+      if (editData) {
+        await dispatch(
+          updateCategory({
+            id: editData._id,
+            data: payload,
+          })
+        ).unwrap();
 
-      showSuccess("Category created successfully");
+        showSuccess(
+          "Category updated successfully"
+        );
+      } else {
+        await dispatch(
+          createCategory(payload)
+        ).unwrap();
+
+        showSuccess(
+          "Category created successfully"
+        );
+      }
+
       reset();
-       onSuccess?.();
+      onSuccess?.();
     } catch (err) {
-      showError(err || "Failed to create category");
+      showError(
+        err || "Operation failed"
+      );
     }
   };
 
+  /* ================= UI ================= */
+
   return (
     <div className="bg-white border rounded-lg shadow-sm">
-
-      {/* HEADER */}
-      <div className="border-b px-5 py-4">
-        <h2 className="text-lg font-semibold text-gray-800">
-          Create Category
-        </h2>
-      </div>
-
-      {/* BODY */}
-      <div className="p-5 space-y-4">
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 text-sm p-2 rounded">
-            {error}
-          </div>
-        )}
-
+      <div className="p-5">
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-4"
@@ -81,7 +115,9 @@ const CreateCategoryForm = ({  onSuccess,}) => {
             loading={loading}
             disabled={!isValid || loading}
           >
-            Create Category
+            {editData
+              ? "Update Category"
+              : "Create Category"}
           </Button>
         </form>
       </div>
@@ -89,4 +125,4 @@ const CreateCategoryForm = ({  onSuccess,}) => {
   );
 };
 
-export default CreateCategoryForm;
+export default CategoryForm;
