@@ -61,13 +61,16 @@ export const deleteCategory = createAsyncThunk(
   "category/deleteCategory",
   async (id, { rejectWithValue }) => {
     try {
-      await api.delete(`/products/categories/deleteCategory/${id}`);
-
-      return id;
+      const res = await api.delete(
+        `/products/categories/deleteCategory/${id}`
+      );
+      return res.data.data; // 🔥 return updated soft deleted record
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message);
+      return rejectWithValue(
+        err.response?.data?.message || "Delete failed"
+      );
     }
-  },
+  }
 );
 export const restoreCategory = createAsyncThunk(
   "category/restoreCategory",
@@ -89,7 +92,7 @@ const categorySlice = createSlice({
   name: "category",
   initialState: {
     categories: [],
-    meta: {},
+    meta: {page: 1, limit: 10, total: 0},
     loading: false,
     error: null,
   },
@@ -97,6 +100,15 @@ const categorySlice = createSlice({
   reducers: {
     clearCategoryError: (state) => {
       state.error = null;
+    },
+     optimisticStatusUpdate: (state, action) => {
+      const { id, status } = action.payload;
+      const category = state.categories.find(
+        (c) => c._id === id
+      );
+      if (category) {
+        category.status = status;
+      }
     },
   },
 
@@ -120,14 +132,19 @@ const categorySlice = createSlice({
       })
 
       .addCase(createCategory.pending, (state) => {
-        state.loading = true;
+        state.loading = false;
         state.error = null;
       })
 
-      .addCase(createCategory.fulfilled, (state, action) => {
-        state.loading = false;
+      // .addCase(createCategory.fulfilled, (state, action) => {
+      //   state.loading = false;
+      //   state.categories.unshift(action.payload);
+      // })
+            .addCase(createCategory.fulfilled, (state, action) => {
         state.categories.unshift(action.payload);
+        state.meta.total += 1;
       })
+
 
       .addCase(createCategory.rejected, (state, action) => {
         state.loading = false;
@@ -175,6 +192,6 @@ const categorySlice = createSlice({
   },
 });
 
-export const { clearCategoryError } = categorySlice.actions;
+export const { clearCategoryError, optimisticStatusUpdate } = categorySlice.actions;
 
 export default categorySlice.reducer;
