@@ -20,7 +20,7 @@ app.use(
 
 
 // Routes
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", routes);
 
 // 404 handler
 app.use((req, res) => {
@@ -33,7 +33,7 @@ app.use((req, res) => {
 // Error handling middleware
 app.use(errorMiddleware);
 
-const PORT = process.env.PORT || 4001;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Auth service running on port ${PORT}`);
   connectDB();
